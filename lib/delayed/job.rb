@@ -1,6 +1,3 @@
-require 'coverband'
-Coverband.configure
-
 module Delayed
 
   class DeserializationError < StandardError
@@ -133,13 +130,10 @@ module Delayed
       end
 
       begin
-        Coverband::Base.instance.start
         runtime =  Benchmark.realtime do
           invoke_job # TODO: raise error if takes longer than max_run_time
           destroy
         end
-        Coverband::Base.instance.stop
-        Coverband::Base.instance.save
         # TODO: warn if runtime > max_run_time ?
         logger.info "* [JOB] #{name} completed after %.4f" % runtime
         return true  # did work
