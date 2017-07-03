@@ -4,11 +4,11 @@ module Delayed
     AR_STRING_FORMAT    = /^AR\:([A-Z][\w\:]+)\:(\d+)$/
 
     def initialize(object, method, args)
-      raise NoMethodError, "undefined method `#{method}' for #{self.inspect}" unless object.respond_to?(method)
-
       self.object = dump(object)
       self.args   = args.map { |a| dump(a) }
       self.method = method.to_sym
+
+      raise NoMethodError, "undefined method `#{method}' for #{object.inspect}" unless object.respond_to?(method, true)
     end
     
     def display_name  
@@ -20,10 +20,14 @@ module Delayed
     end    
 
     def perform
-      load(object).send(method, *args.map{|a| load(a)})
+      obj = load(object)
+      use_obj_time_zone(obj)
+      obj.send(method, *args.map{|a| load(a)})
     rescue ActiveRecord::RecordNotFound
       # We cannot do anything about objects which were deleted in the meantime
       true
+    ensure
+      Time.zone = Rails::configuration.time_zone
     end
 
     private
@@ -50,6 +54,19 @@ module Delayed
 
     def class_to_string(obj)
       "CLASS:#{obj.name}"
+    end
+
+    def use_obj_time_zone(obj)
+      account = if obj.is_a? Account
+                  obj
+                elsif obj.respond_to?(:account) && obj.account && obj.account.is_a?(Account)
+                  obj.account
+                else
+                  nil
+                end
+      if account
+        Time.zone = account.get_time_zone
+      end
     end
   end
 end

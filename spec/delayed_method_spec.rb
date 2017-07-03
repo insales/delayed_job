@@ -101,7 +101,7 @@ describe 'random ruby objects' do
     story = Story.create :text => 'Once upon...'
 
     reader = StoryReader.new
-    reader.send_later(:read, story)
+    reader.send_later(:read, 0, story)
 
     job =  Delayed::Job.find(:first)
     job.payload_object.class.should   == Delayed::PerformableMethod

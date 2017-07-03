@@ -6,9 +6,9 @@ module Delayed
   # A job object that is persisted to the database.
   # Contains the work object as a YAML field.
   class Job < ActiveRecord::Base
-    MAX_ATTEMPTS = 25
-    MAX_RUN_TIME = 4.hours
-    set_table_name :delayed_jobs
+    MAX_ATTEMPTS = 3
+    MAX_RUN_TIME = 2.hours
+    self.table_name = :delayed_jobs
 
     # By default failed jobs are destroyed after too many attempts.
     # If you want to keep them around (perhaps to inspect the reason
@@ -22,7 +22,10 @@ module Delayed
     cattr_accessor :worker_name
     self.worker_name = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
 
-    NextTaskSQL         = '(run_at <= ? AND (locked_at IS NULL OR locked_at < ?) OR (locked_by = ?)) AND failed_at IS NULL'
+    cattr_accessor :worker_host
+    self.worker_host = "host:#{Socket.gethostname} %"
+
+    NextTaskSQL         = '(run_at <= ? AND (locked_at IS NULL OR (locked_at < ? AND locked_by LIKE ?)) OR (locked_by = ?)) AND failed_at IS NULL'
     NextTaskOrder       = 'priority DESC, run_at ASC'
 
     ParseObjectFromYaml = /\!ruby\/\w+\:([^\s]+)/
@@ -34,6 +37,40 @@ module Delayed
     # When a worker is exiting, make sure we don't have any locked jobs.
     def self.clear_locks!
       update_all("locked_by = null, locked_at = null", ["locked_by = ?", worker_name])
+    end
+
+    def get_pid_and_host
+      return if locked_by.blank?
+      raise "Bad locked_by format: '#{locked_by}'" unless locked_by.match(/^host:([\w\d\-\.]+) pid:(\d+)$/)
+      @host = $1
+      @pid = $2.to_i
+    end
+
+    def pid
+      return @pid if @pid
+      get_pid_and_host
+      @pid
+    end
+
+    def host
+      return @host if @host
+      get_pid_and_host
+      @host
+    end
+
+    def this_host?
+      host == Socket.gethostname
+    end
+
+    def kill!
+      Process.kill(9, pid) if pid
+    end
+
+    def killed?
+      return false if !this_host?
+      !Process.kill(0, pid)
+    rescue Errno::ESRCH => e
+      return true
     end
 
     def failed?
@@ -70,7 +107,12 @@ module Delayed
         self.run_at       = time
         self.last_error   = message + "\n" + backtrace.join("\n")
         self.unlock
-        save!
+        begin
+          save!
+        rescue
+          self.last_error = "Can't save error message\n" + backtrace.join("\n")
+          save!
+        end
       else
         logger.info "* [JOB] PERMANENTLY removing #{self.name} because of #{attempts} consequetive failures."
         destroy_failed_jobs ? destroy : update_attribute(:failed_at, Time.now)
@@ -111,7 +153,7 @@ module Delayed
       end
     
       priority = args.first || 0
-      run_at   = args[1]
+      run_at   = args[1] || db_time_now
 
       Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
     end
@@ -124,7 +166,7 @@ module Delayed
 
       sql = NextTaskSQL.dup
 
-      conditions = [time_now, time_now - max_run_time, worker_name]
+      conditions = [time_now, time_now - max_run_time, worker_host, worker_name]
 
       if self.min_priority
         sql << ' AND (priority >= ?)'
@@ -139,7 +181,7 @@ module Delayed
       conditions.unshift(sql)
 
       records = ActiveRecord::Base.silence do
-        find(:all, :conditions => conditions, :order => NextTaskOrder, :limit => limit)
+        all(:conditions => conditions, :order => NextTaskOrder, :limit => limit)
       end
 
       records.sort_by { rand() }
@@ -163,6 +205,10 @@ module Delayed
     # Returns true if we have the lock, false otherwise.
     def lock_exclusively!(max_run_time, worker = worker_name)
       now = self.class.db_time_now
+      if !locked_by.blank? && locked_by != worker && !killed?
+        self.class.update_all(["locked_at = ?", now], ["id = ?", id])
+        return false
+      end
       affected_rows = if locked_by != worker
         # We don't own this job so we will update the locked_by name and the locked_at
         self.class.update_all(["locked_at = ?, locked_by = ?", now, worker], ["id = ? and (locked_at is null or locked_at < ?)", id, (now - max_run_time.to_i)])
@@ -190,6 +236,7 @@ module Delayed
     def log_exception(error)
       logger.error "* [JOB] #{name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
       logger.error(error)
+      ::Rollbar.scope(:request => self).error(error, :use_exception_level_filters => true)
     end
 
     # Do num jobs and return stats on success/failure.
@@ -213,11 +260,29 @@ module Delayed
     end
 
     # Moved into its own method so that new_relic can trace it.
+    # add hook https://github.com/collectiveidea/delayed_job/blob/v4.0.6/lib/delayed/backend/base.rb#L90
     def invoke_job
-      payload_object.perform
+      begin
+        hook :before
+        payload_object.perform
+        hook :success
+      rescue Exception => e # rubocop:disable RescueException
+        hook :error, e
+        raise e
+      ensure
+        hook :after
+      end
     end
 
   private
+    # add hook https://github.com/collectiveidea/delayed_job/blob/v4.0.6/lib/delayed/backend/base.rb#L111
+    def hook(name, *args)
+      if payload_object.respond_to?(name)
+        method = payload_object.method(name)
+        method.arity == 0 ? method.call : method.call(self, *args)
+      end
+      rescue DeserializationError # rubocop:disable HandleExceptions
+    end
 
     def deserialize(source)
       handler = YAML.load(source) rescue nil
@@ -255,7 +320,8 @@ module Delayed
   protected
 
     def before_save
-      self.run_at ||= self.class.db_time_now
+      # Вычитаем 1 час для того чтобы run_at не оказывалось в будущем, если времена на серверах разойдуться.
+      self.run_at ||= self.class.db_time_now - 1.hour
     end
 
   end
