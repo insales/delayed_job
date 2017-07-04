@@ -5,6 +5,8 @@ require File.dirname(__FILE__) + '/delayed/performable_method'
 require File.dirname(__FILE__) + '/delayed/job'
 require File.dirname(__FILE__) + '/delayed/worker'
 
+require 'delayed/railtie' if defined?(Rails::Railtie)
+
 Object.send(:include, Delayed::MessageSending)
 Module.send(:include, Delayed::MessageSending::ClassMethods)
 
