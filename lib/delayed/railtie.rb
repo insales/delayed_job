@@ -4,8 +4,8 @@ require 'rails'
 module Delayed
   class Railtie < Rails::Railtie
     rake_tasks do
-      load 'taks/tasks.rb'
-      load 'taks/jobs.rake'
+      load 'tasks/tasks.rb'
+      load 'tasks/jobs.rake'
     end
   end
 end
