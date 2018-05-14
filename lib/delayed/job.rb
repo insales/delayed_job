@@ -277,7 +277,7 @@ module Delayed
     # add hook https://github.com/collectiveidea/delayed_job/blob/v4.0.6/lib/delayed/backend/base.rb#L111
     def hook(name, *args)
       if payload_object.respond_to?(name)
-        method = payload_object.method(name)
+        method = payload_object.public_method(name)
         method.arity == 0 ? method.call : method.call(self, *args)
       end
       rescue DeserializationError # rubocop:disable HandleExceptions
