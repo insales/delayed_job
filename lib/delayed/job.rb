@@ -37,6 +37,11 @@ module Delayed
     self.min_priority = nil
     self.max_priority = nil
 
+    before_save do
+      # Вычитаем 1 час для того чтобы run_at не оказывалось в будущем, если времена на серверах разойдуться.
+      self.run_at ||= self.class.db_time_now - 1.hour
+    end
+
     # When a worker is exiting, make sure we don't have any locked jobs.
     def self.clear_locks!
       update_all("locked_by = null, locked_at = null", ["locked_by = ?", worker_name])
@@ -181,11 +186,7 @@ module Delayed
       end
 
       conditions.unshift(sql)
-
-      records = ActiveRecord::Base.silence do
-        all(:conditions => conditions, :order => NextTaskOrder, :limit => limit)
-      end
-
+      records = where(conditions).order(NextTaskOrder).limit(limit)
       records.sort_by { rand() }
     end
 
@@ -320,14 +321,6 @@ module Delayed
     def self.db_time_now
       (ActiveRecord::Base.default_timezone == :utc) ? Time.now.utc : Time.now
     end
-
-  protected
-
-    def before_save
-      # Вычитаем 1 час для того чтобы run_at не оказывалось в будущем, если времена на серверах разойдуться.
-      self.run_at ||= self.class.db_time_now - 1.hour
-    end
-
   end
 
   class EvaledJob
