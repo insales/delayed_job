@@ -17,7 +17,7 @@ ActiveRecord::Schema.define do
     table.datetime :locked_at
     table.string   :locked_by
     table.datetime :failed_at
-    table.timestamps
+    table.timestamps null: false
   end
 
   create_table :stories, :force => true do |table|

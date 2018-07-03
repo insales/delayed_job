@@ -75,7 +75,7 @@ describe 'random ruby objects' do
     story = Story.create :text => 'Once upon...'
     story.send_later(:tell)
 
-    job =  Delayed::Job.find(:first)
+    job =  Delayed::Job.first
     job.payload_object.class.should   == Delayed::PerformableMethod
     job.payload_object.object.should  == "AR:Story:#{story.id}"
     job.payload_object.method.should  == :tell
@@ -90,7 +90,7 @@ describe 'random ruby objects' do
     reader = StoryReader.new
     reader.send_later(:read, 0, story)
 
-    job =  Delayed::Job.find(:first)
+    job =  Delayed::Job.first
     job.payload_object.class.should   == Delayed::PerformableMethod
     job.payload_object.method.should  == :read
     job.payload_object.args.should    == ["AR:Story:#{story.id}"]
@@ -105,7 +105,7 @@ describe 'random ruby objects' do
     story.whatever(1, 5)
 
     Delayed::Job.count.should == 1
-    job =  Delayed::Job.find(:first)
+    job =  Delayed::Job.first
     job.payload_object.class.should   == Delayed::PerformableMethod
     job.payload_object.method.should  == :whatever_without_send_later
     job.payload_object.args.should    == [1, 5]
