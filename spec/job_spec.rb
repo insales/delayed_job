@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/database'
+require 'database_helper'
 
 class SimpleJob
   cattr_accessor :runs; self.runs = 0
@@ -22,11 +22,8 @@ describe Delayed::Job do
   before  do
     Delayed::Job.max_priority = nil
     Delayed::Job.min_priority = nil
-
     Delayed::Job.delete_all
-  end
 
-  before(:each) do
     SimpleJob.runs = 0
   end
 
@@ -283,7 +280,7 @@ describe Delayed::Job do
 
     it "should leave the queue in a consistent state and not run the job if locking fails" do
       SimpleJob.runs.should == 0
-      @job.stub!(:lock_exclusively!).with(any_args).once.and_return(false)
+      @job.stub(:lock_exclusively!).with(any_args).once.and_return(false)
       Delayed::Job.should_receive(:find_available).once.and_return([@job])
       Delayed::Job.work_off(1)
       SimpleJob.runs.should == 0

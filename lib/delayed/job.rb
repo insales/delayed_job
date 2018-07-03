@@ -1,3 +1,6 @@
+require 'active_record'
+require 'socket'
+
 module Delayed
 
   class DeserializationError < StandardError
@@ -235,7 +238,9 @@ module Delayed
     def log_exception(error)
       logger.error "* [JOB] #{name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
       logger.error(error)
-      ::Rollbar.scope(:request => self).error(error, :use_exception_level_filters => true)
+      if defined?(Rollbar)
+        ::Rollbar.scope(:request => self).error(error, :use_exception_level_filters => true)
+      end
     end
 
     # Do num jobs and return stats on success/failure.
