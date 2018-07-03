@@ -94,7 +94,7 @@ describe Delayed::Job do
     Delayed::Job.enqueue ErrorJob.new
     Delayed::Job.work_off(1)
 
-    job = Delayed::Job.find(:first)
+    job = Delayed::Job.first
 
     job.last_error.should =~ /did not work/
     job.last_error.should =~ /job_spec.rb:10:in `perform'/
