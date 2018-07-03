@@ -1,9 +1,4 @@
-require File.dirname(__FILE__) + '/database'
-
-class SimpleJob
-  cattr_accessor :runs; self.runs = 0
-  def perform; @@runs += 1; end
-end
+require 'database_helper'
 
 class RandomRubyObject
   def say_hello
@@ -16,14 +11,6 @@ class ErrorObject
   def throw
     raise ActiveRecord::RecordNotFound, '...'
     false
-  end
-
-end
-
-class StoryReader
-
-  def read(story)
-    "Epilog: #{story.tell}"
   end
 
 end
