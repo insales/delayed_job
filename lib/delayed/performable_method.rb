@@ -27,7 +27,7 @@ module Delayed
       # We cannot do anything about objects which were deleted in the meantime
       true
     ensure
-      Time.zone = Rails::configuration.time_zone
+      Time.zone = Rails.configuration.time_zone
     end
 
     private
@@ -57,16 +57,13 @@ module Delayed
     end
 
     def use_obj_time_zone(obj)
-      account = if obj.is_a? Account
+      return unless defined?(Account)
+      account = if obj.is_a?(Account)
                   obj
-                elsif obj.respond_to?(:account) && obj.account && obj.account.is_a?(Account)
+                elsif obj.try(:account).is_a?(Account)
                   obj.account
-                else
-                  nil
                 end
-      if account
-        Time.zone = account.get_time_zone
-      end
+      Time.zone = account.get_time_zone if account
     end
   end
 end

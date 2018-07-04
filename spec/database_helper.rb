@@ -1,12 +1,6 @@
-$:.unshift(File.dirname(__FILE__) + '/../lib')
-$:.unshift(File.dirname(__FILE__) + '/../../rspec/lib')
+require 'logger'
 
-require 'rubygems'
-require 'active_record'
-gem 'sqlite3-ruby'
-
-require File.dirname(__FILE__) + '/../init'
-require 'spec'
+class TestApplication < Rails::Application; end
 
 ActiveRecord::Base.logger = Logger.new('/tmp/dj.log')
 ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => '/tmp/jobs.sqlite')
@@ -23,7 +17,7 @@ ActiveRecord::Schema.define do
     table.datetime :locked_at
     table.string   :locked_by
     table.datetime :failed_at
-    table.timestamps
+    table.timestamps null: false
   end
 
   create_table :stories, :force => true do |table|
