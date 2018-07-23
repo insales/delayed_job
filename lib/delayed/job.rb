@@ -137,19 +137,17 @@ module Delayed
         return nil # no work done
       end
 
-      begin
-        runtime =  Benchmark.realtime do
-          invoke_job # TODO: raise error if takes longer than max_run_time
-          destroy
-        end
-        # TODO: warn if runtime > max_run_time ?
-        logger.info "* [JOB] #{name} completed after %.4f" % runtime
-        return true  # did work
-      rescue Exception => e
-        reschedule e.message, e.backtrace
-        log_exception(e)
-        return false  # work failed
+      runtime =  Benchmark.realtime do
+        invoke_job # TODO: raise error if takes longer than max_run_time
+        destroy
       end
+      # TODO: warn if runtime > max_run_time ?
+      logger.info "* [JOB] #{name} completed after %.4f" % runtime
+      return true  # did work
+    rescue Exception => e
+      reschedule e.message, e.backtrace
+      log_exception(e)
+      return false  # work failed
     end
 
     # Add a job to the queue
@@ -240,6 +238,7 @@ module Delayed
 
     # This is a good hook if you need to report job processing errors in additional or different ways
     def log_exception(error)
+      name = @name || 'unknown' # don't use computed name, because it could cause an error.
       logger.error "* [JOB] #{name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
       logger.error(error)
       if defined?(Rollbar)
