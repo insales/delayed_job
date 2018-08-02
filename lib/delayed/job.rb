@@ -101,6 +101,11 @@ module Delayed
       end
     end
 
+    # Name to be used when payload is failed to be parsed.
+    def safe_name
+      @name || 'unknown'
+    end
+
     def payload_object=(object)
       self['handler'] = object.to_yaml
     end
@@ -122,7 +127,7 @@ module Delayed
           save!
         end
       else
-        logger.info "* [JOB] PERMANENTLY removing #{self.name} because of #{attempts} consequetive failures."
+        logger.info "* [JOB] PERMANENTLY removing #{safe_name} because of #{attempts} consequetive failures."
         destroy_failed_jobs ? destroy : update_attribute(:failed_at, Time.now)
       end
     end
@@ -238,8 +243,7 @@ module Delayed
 
     # This is a good hook if you need to report job processing errors in additional or different ways
     def log_exception(error)
-      name = @name || 'unknown' # don't use computed name, because it could cause an error.
-      logger.error "* [JOB] #{name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
+      logger.error "* [JOB] #{safe_name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
       logger.error(error)
       if defined?(Rollbar)
         ::Rollbar.scope(:request => self).error(error, :use_exception_level_filters => true)
