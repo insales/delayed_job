@@ -150,8 +150,12 @@ module Delayed
       logger.info "* [JOB] #{name} completed after %.4f" % runtime
       return true  # did work
     rescue Exception => e
-      reschedule e.message, e.backtrace
-      log_exception(e)
+      begin
+        # Log before reschedule to report more params
+        log_exception(e)
+      ensure
+        reschedule e.message, e.backtrace
+      end
       return false  # work failed
     end
 
@@ -246,7 +250,8 @@ module Delayed
       logger.error "* [JOB] #{safe_name} failed with #{error.class.name}: #{error.message} - #{attempts} failed attempts"
       logger.error(error)
       if defined?(Rollbar)
-        ::Rollbar.scope(:request => self).error(error, :use_exception_level_filters => true)
+        rollbar_scope = as_json(except: :last_error)
+        ::Rollbar.scope(:request => rollbar_scope).error(error, :use_exception_level_filters => true)
       end
     end
 
