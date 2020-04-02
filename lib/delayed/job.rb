@@ -201,9 +201,9 @@ module Delayed
     # If no jobs are left we return nil
     def self.reserve_and_run_one_job(max_run_time = MAX_RUN_TIME)
 
-      # We get up to 5 jobs from the db. In case we cannot get exclusive access to a job we try the next.
+      # We get up to 50 jobs from the db. In case we cannot get exclusive access to a job we try the next.
       # this leads to a more even distribution of jobs across the worker processes
-      find_available(5, max_run_time).each do |job|
+      find_available(50, max_run_time).each do |job|
         t = job.run_with_lock(max_run_time, worker_name)
         return t unless t == nil  # return if we did work (good or bad)
       end
