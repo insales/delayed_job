@@ -15,18 +15,6 @@ namespace :jobs do
 
   desc "Destroy delayed_jobs locked by dead workers, and kill hanging workers"
   task :destroy => [:merb_env, :environment] do
-    Import.running
-      .where(canceled: true)
-      .where("now() - updated_at > '1 minute'")
-      .includes(:delayed_job)
-      .each{ |import|
-        dj = import.delayed_job
-        next unless dj
-        next unless dj.this_host? && !dj.killed?
-        dj.kill!
-        dj.destroy if dj.killed?
-        import.aborted!
-      }
   	Delayed::Job.where("locked_by ~ '\:#{Socket.gethostname} '").find_all(&:killed?).each do |d|
   	  puts "[#{Time.now}] id: #{d.id}, created_at: #{d.created_at}, locked_at: #{d.locked_at}, locked_by: #{d.locked_by}\nhandler: #{d.handler}\nlast_error: #{d.last_error}\n\n"
   	  d.destroy
