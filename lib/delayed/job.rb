@@ -2,7 +2,6 @@ require 'active_record'
 require 'socket'
 
 module Delayed
-
   class DeserializationError < StandardError
   end
 
@@ -11,6 +10,7 @@ module Delayed
   class Job < ActiveRecord::Base
     MAX_ATTEMPTS = 3
     MAX_RUN_TIME = 2.hours
+    CACHE_TIME_FOR_MIN_ID = 10.minutes
     self.table_name = :delayed_jobs
 
     # By default failed jobs are destroyed after too many attempts.
@@ -132,7 +132,6 @@ module Delayed
       end
     end
 
-
     # Try to run one job. Returns true/false (work done/work failed) or nil if job can't be locked.
     def run_with_lock(max_run_time, worker_name)
       logger.info "* [JOB] aquiring lock on #{name}"
@@ -172,29 +171,43 @@ module Delayed
       Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
     end
 
-    # Find a few candidate jobs to run (in case some immediately get locked by others).
-    # Return in random order prevent everyone trying to do same head job at once.
-    def self.find_available(limit = 5, max_run_time = MAX_RUN_TIME)
+    def self.cached_min_available_id
+      if @cached_min_available_id && @min_available_id_cache_time &&
+         Time.now < @min_available_id_cache_time + CACHE_TIME_FOR_MIN_ID
+        return @cached_min_available_id
+      end
 
+      @min_available_id_cache_time = Time.now
+      current_min_id = find_available_relation.minimum(:id)
+      current_min_id ||= connection.execute("select last_value from delayed_jobs_id_seq").first["last_value"]
+      @cached_min_available_id = current_min_id
+    end
+
+    def self.find_available_relation(max_run_time = MAX_RUN_TIME)
       time_now = db_time_now
-
       sql = NextTaskSQL.dup
-
       conditions = [time_now, time_now - max_run_time, worker_host, worker_name]
 
-      if self.min_priority
+      if min_priority
         sql << ' AND (priority >= ?)'
         conditions << min_priority
       end
 
-      if self.max_priority
+      if max_priority
         sql << ' AND (priority <= ?)'
         conditions << max_priority
       end
 
       conditions.unshift(sql)
-      records = where(conditions).order(NextTaskOrder).limit(limit)
-      records.sort_by { rand() }
+      where(conditions)
+    end
+
+    # Find a few candidate jobs to run (in case some immediately get locked by others).
+    # Return in random order prevent everyone trying to do same head job at once.
+    def self.find_available(limit = 5, max_run_time = MAX_RUN_TIME)
+      find_available_relation(max_run_time)
+        .where("id >= ?", cached_min_available_id)
+        .order(NextTaskOrder).limit(limit).shuffle
     end
 
     # Run the next job we can get an exclusive lock on.
