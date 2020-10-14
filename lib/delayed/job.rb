@@ -168,7 +168,9 @@ module Delayed
 
       priority = args.first || 0
       run_at   = args[1] || db_time_now
-      Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
+      job = Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
+      logger.info "* [JOB] create job_id: #{job.id} class: #{job.handler}"
+      job
     end
 
     def self.cached_min_available_id
