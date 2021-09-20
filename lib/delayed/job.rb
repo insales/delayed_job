@@ -40,6 +40,7 @@ module Delayed
     before_save do
       # Вычитаем 1 час для того чтобы run_at не оказывалось в будущем, если времена на серверах разойдуться.
       self.run_at ||= self.class.db_time_now - 1.hour
+      true
     end
 
     # When a worker is exiting, make sure we don't have any locked jobs.
