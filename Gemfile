@@ -4,8 +4,8 @@ source 'http://rubygems.org'
 
 gemspec
 
+gem 'pg', '~> 1.1.4'
 gem 'rspec'
-gem 'sqlite3'
 
 gem 'awesome_print'
 gem 'pry'

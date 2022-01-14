@@ -1,9 +1,18 @@
+# frozen_string_literal: true
+
 require 'logger'
 
 class TestApplication < Rails::Application; end
 
 ActiveRecord::Base.logger = Logger.new('/tmp/dj.log')
-ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => '/tmp/jobs.sqlite')
+ActiveRecord::Base.establish_connection(
+  adapter: 'postgresql',
+  host: '127.0.0.1',
+  database: 'delayed_job_test',
+  encoding: 'utf8',
+  username: 'postgres',
+  port: 5432
+)
 ActiveRecord::Migration.verbose = false
 
 ActiveRecord::Schema.define do
