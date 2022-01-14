@@ -7,9 +7,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # EKAM
-          - ruby-version: 2.5.8
-            rails-version: 52
           # InSales
           - ruby-version: 2.6.6
             rails-version: 52
