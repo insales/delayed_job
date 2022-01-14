@@ -8,7 +8,7 @@ ActiveRecord::Base.logger = Logger.new('/tmp/dj.log')
 ActiveRecord::Base.establish_connection(
   adapter: 'postgresql',
   host: '127.0.0.1',
-  database: 'paperclip_test',
+  database: 'delayed_job_test',
   encoding: 'utf8',
   username: 'postgres',
   port: 5432
