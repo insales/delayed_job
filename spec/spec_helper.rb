@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'pry'
 require 'active_record'
-require 'sqlite3'
+require 'pg'
 
 $:.unshift(File.expand_path('../lib', __FILE__))
 require 'delayed_job'

@@ -53,6 +53,7 @@ GEM
     minitest (5.15.0)
     nokogiri (1.13.1-x86_64-linux)
       racc (~> 1.4)
+    pg (1.1.4)
     pry (0.14.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -91,7 +92,6 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.10.0)
     rspec-support (3.10.3)
-    sqlite3 (1.4.2)
     thor (1.2.1)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
@@ -109,12 +109,12 @@ DEPENDENCIES
   awesome_print
   bundler
   delayed_job!
+  pg (~> 1.1.4)
   pry
   pry-byebug
   pry-doc
   rake
   rspec
-  sqlite3
 
 BUNDLED WITH
    2.2.17
