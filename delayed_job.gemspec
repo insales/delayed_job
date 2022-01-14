@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Gem::Specification.new do |s|
   s.name     = "delayed_job"
   s.version  = "1.7.0"
@@ -11,7 +13,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
   s.require_paths = ['lib']
 
-  s.add_dependency 'activerecord', '>= 3.2', '< 6'
+  s.add_dependency 'activerecord', '>= 3.2', '< 7.1'
   s.add_dependency 'railties'
 
   s.add_development_dependency 'bundler'
