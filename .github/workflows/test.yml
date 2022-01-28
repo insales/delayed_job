@@ -1,0 +1,45 @@
+name: Test
+on: [push]
+jobs:
+  runTests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          # InSales
+          - ruby-version: 2.6.6
+            rails-version: 52
+          - ruby-version: 2.6.6
+            rails-version: 60
+          - ruby-version: 2.7.5
+            rails-version: 60
+          - ruby-version: 2.7.5
+            rails-version: 61
+          - ruby-version: 2.7.5
+            rails-version: 70
+
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails-version }}.gemfile
+
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ""
+          POSTGRES_DB: delayed_job_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@master
+      - name: Install ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: |
+          bundle exec appraisal rails_${{ matrix.rails-version }} rspec
