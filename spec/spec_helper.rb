@@ -108,3 +108,11 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 =end
 end
+
+$exit = false # to fix warning, this is set on worker start
+
+if defined?(Warning) && Warning.respond_to?(:[]=)
+  # enable most warnings
+  $VERBOSE = true
+  Warning[:deprecated] = true
+end
