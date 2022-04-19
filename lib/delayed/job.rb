@@ -104,7 +104,7 @@ module Delayed
 
     # Name to be used when payload is failed to be parsed.
     def safe_name
-      @name || 'unknown'
+      defined?(@name) && @name || 'unknown'
     end
 
     def payload_object=(object)

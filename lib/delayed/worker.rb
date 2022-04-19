@@ -18,6 +18,7 @@ module Delayed
     def start
       say "*** Starting job worker #{Delayed::Job.worker_name}"
 
+      $exit = false
       trap('TERM') { say 'Exiting...'; $exit = true }
       trap('INT')  { say 'Exiting...'; $exit = true }
 
