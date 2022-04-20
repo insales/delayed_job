@@ -34,7 +34,7 @@ RSpec.configure do |config|
     # ...rather than:
     #     # => "be bigger than 2"
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
-    expectations.syntax = :should
+    expectations.syntax = :expect
   end
 
   # rspec-mocks config goes here. You can use an alternate test double
@@ -44,7 +44,7 @@ RSpec.configure do |config|
     # a real object. This is generally recommended, and will default to
     # `true` in RSpec 4.
     mocks.verify_partial_doubles = true
-    mocks.syntax = :should
+    mocks.syntax = :expect
   end
 
   # This option will default to `:apply_to_host_groups` in RSpec 4 (and will
@@ -107,4 +107,12 @@ RSpec.configure do |config|
   # as the one that triggered the failure.
   Kernel.srand config.seed
 =end
+end
+
+$exit = false # to fix warning, this is set on worker start
+
+if defined?(Warning) && Warning.respond_to?(:[]=)
+  # enable most warnings
+  $VERBOSE = true
+  Warning[:deprecated] = true
 end

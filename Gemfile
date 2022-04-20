@@ -5,6 +5,7 @@ source 'http://rubygems.org'
 gemspec
 
 gem 'pg', '~> 1.1.4'
+gem 'sqlite3'
 gem 'rspec'
 
 gem 'awesome_print'

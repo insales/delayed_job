@@ -28,26 +28,26 @@ describe Delayed::Job do
   end
 
   it "should set run_at automatically if not set" do
-    Delayed::Job.create(:payload_object => ErrorJob.new ).run_at.should_not == nil
+    expect(Delayed::Job.create(:payload_object => ErrorJob.new ).run_at).not_to eq nil
   end
 
   it "should not set run_at automatically if already set" do
     later = 5.minutes.from_now
-    Delayed::Job.create(:payload_object => ErrorJob.new, :run_at => later).run_at.should be_within(0.000001.seconds).of later
+    expect(Delayed::Job.create(:payload_object => ErrorJob.new, :run_at => later).run_at).to be_within(0.000001.seconds).of later
   end
 
   it "should raise ArgumentError when handler doesn't respond_to :perform" do
-    lambda { Delayed::Job.enqueue(Object.new) }.should raise_error(ArgumentError)
+    expect { Delayed::Job.enqueue(Object.new) }.to raise_error(ArgumentError)
   end
 
   it "should increase count after enqueuing items" do
     Delayed::Job.enqueue SimpleJob.new
-    Delayed::Job.count.should == 1
+    expect(Delayed::Job.count).to eq 1
   end
 
   it "should be able to set priority when enqueuing items" do
     Delayed::Job.enqueue SimpleJob.new, 5
-    Delayed::Job.first.priority.should == 5
+    expect(Delayed::Job.first.priority).to eq 5
   end
 
   it "should be able to set run_at when enqueuing items" do
@@ -55,16 +55,16 @@ describe Delayed::Job do
     Delayed::Job.enqueue SimpleJob.new, 5, later
 
     # use be close rather than equal to because millisecond values cn be lost in DB round trip
-    Delayed::Job.first.run_at.should be_within(1).of(later)
+    expect(Delayed::Job.first.run_at).to be_within(1).of(later)
   end
 
   it "should call perform on jobs when running work_off" do
-    SimpleJob.runs.should == 0
+    expect(SimpleJob.runs).to eq 0
 
     Delayed::Job.enqueue SimpleJob.new
     Delayed::Job.work_off
 
-    SimpleJob.runs.should == 1
+    expect(SimpleJob.runs).to eq 1
   end
 
 
@@ -78,16 +78,16 @@ describe Delayed::Job do
 
     Delayed::Job.work_off
 
-    $eval_job_ran.should == true
+    expect($eval_job_ran).to eq true
   end
 
   it "should work with jobs in modules" do
-    M::ModuleJob.runs.should == 0
+    expect(M::ModuleJob.runs).to eq 0
 
     Delayed::Job.enqueue M::ModuleJob.new
     Delayed::Job.work_off
 
-    M::ModuleJob.runs.should == 1
+    expect(M::ModuleJob.runs).to eq 1
   end
 
   it "should re-schedule by about 1 second at first and increment this more and more minutes when it fails to execute properly" do
@@ -96,12 +96,12 @@ describe Delayed::Job do
 
     job = Delayed::Job.first
 
-    job.last_error.should =~ /did not work/
-    job.last_error.should =~ /job_spec.rb:10:in `perform'/
-    job.attempts.should == 1
+    expect(job.last_error).to match(/did not work/)
+    expect(job.last_error).to match(/job_spec.rb:10:in `perform'/)
+    expect(job.attempts).to eq 1
 
-    job.run_at.should > Delayed::Job.db_time_now - 10.minutes
-    job.run_at.should < Delayed::Job.db_time_now + 10.minutes
+    expect(job.run_at).to be > Delayed::Job.db_time_now - 10.minutes
+    expect(job.run_at).to be < Delayed::Job.db_time_now + 10.minutes
   end
 
   let(:deserialization_error) { [ArgumentError, /undefined .*JobThatDoesNotExist/] }
@@ -111,40 +111,40 @@ describe Delayed::Job do
     job = Delayed::Job.new
     job['handler'] = "--- !ruby/object:JobThatDoesNotExist {}"
 
-    lambda { job.payload_object.perform }.should raise_error(Delayed::DeserializationError)
+    expect { job.payload_object.perform }.to raise_error(Delayed::DeserializationError)
   end
 
   it "should try to load the class when it is unknown at the time of the deserialization" do
     job = Delayed::Job.new
     job['handler'] = "--- !ruby/object:JobThatDoesNotExist {}"
 
-    job.should_receive(:attempt_to_load).with('JobThatDoesNotExist').and_return(true)
+    expect(job).to receive(:attempt_to_load).with('JobThatDoesNotExist').and_return(true)
 
-    lambda { job.payload_object.perform }.should raise_error(*deserialization_error)
+    expect { job.payload_object.perform }.to raise_error(*deserialization_error)
   end
 
   it "should try include the namespace when loading unknown objects" do
     job = Delayed::Job.new
     job['handler'] = "--- !ruby/object:Delayed::JobThatDoesNotExist {}"
-    job.should_receive(:attempt_to_load).with('Delayed::JobThatDoesNotExist').and_return(true)
-    lambda { job.payload_object.perform }.should raise_error(*deserialization_error)
+    expect(job).to receive(:attempt_to_load).with('Delayed::JobThatDoesNotExist').and_return(true)
+    expect { job.payload_object.perform }.to raise_error(*deserialization_error)
   end
 
   it "should also try to load structs when they are unknown (raises TypeError)" do
     job = Delayed::Job.new
     job['handler'] = "--- !ruby/struct:JobThatDoesNotExist {}"
 
-    job.should_receive(:attempt_to_load).with('JobThatDoesNotExist').and_return(true)
+    expect(job).to receive(:attempt_to_load).with('JobThatDoesNotExist').and_return(true)
 
-    lambda { job.payload_object.perform }.should raise_error(*deserialization_error)
+    expect { job.payload_object.perform }.to raise_error(*deserialization_error)
   end
 
   it "should try include the namespace when loading unknown structs" do
     job = Delayed::Job.new
     job['handler'] = "--- !ruby/struct:Delayed::JobThatDoesNotExist {}"
 
-    job.should_receive(:attempt_to_load).with('Delayed::JobThatDoesNotExist').and_return(true)
-    lambda { job.payload_object.perform }.should raise_error(*deserialization_error)
+    expect(job).to receive(:attempt_to_load).with('Delayed::JobThatDoesNotExist').and_return(true)
+    expect { job.payload_object.perform }.to raise_error(*deserialization_error)
   end
 
   it "should be failed if it failed more than MAX_ATTEMPTS times and we don't want to destroy jobs" do
@@ -152,9 +152,9 @@ describe Delayed::Job do
     Delayed::Job.destroy_failed_jobs = false
 
     @job = Delayed::Job.create :payload_object => SimpleJob.new, :attempts => 50
-    @job.reload.failed_at.should == nil
+    expect(@job.reload.failed_at).to eq nil
     @job.reschedule 'FAIL'
-    @job.reload.failed_at.should_not == nil
+    expect(@job.reload.failed_at).not_to eq nil
 
     Delayed::Job.destroy_failed_jobs = default
   end
@@ -164,7 +164,7 @@ describe Delayed::Job do
     Delayed::Job.destroy_failed_jobs = true
 
     @job = Delayed::Job.create :payload_object => SimpleJob.new, :attempts => 50
-    @job.should_receive(:destroy)
+    expect(@job).to receive(:destroy)
     @job.reschedule 'FAIL'
 
     Delayed::Job.destroy_failed_jobs = default
@@ -172,7 +172,7 @@ describe Delayed::Job do
 
   it "should never find failed jobs" do
     @job = Delayed::Job.create :payload_object => SimpleJob.new, :attempts => 50, :failed_at => Time.now
-    Delayed::Job.find_available(1).length.should == 0
+    expect(Delayed::Job.find_available(1).length).to eq 0
   end
 
   context "when another worker is already performing an task, it" do
@@ -181,15 +181,15 @@ describe Delayed::Job do
       Delayed::Job.worker_name = 'worker1'
       @job = Delayed::Job.create :payload_object => SimpleJob.new, :locked_by => 'worker1', :locked_at => Delayed::Job.db_time_now - 5.minutes
       # This examples are written assuming that job is killable.
-      @job.stub(:killed?) { true }
+      allow(@job).to receive(:killed?).and_return(true)
     end
 
     it "should not allow a second worker to get exclusive access" do
-      @job.lock_exclusively!(4.hours, 'worker2').should == false
+      expect(@job.lock_exclusively!(4.hours, 'worker2')).to eq false
     end
 
     it "should allow a second worker to get exclusive access if the timeout has passed" do
-      @job.lock_exclusively!(1.minute, 'worker2').should == true
+      expect(@job.lock_exclusively!(1.minute, 'worker2')).to eq true
     end
 
     it "should be able to get access to the task if it was started more then max_age ago" do
@@ -198,21 +198,21 @@ describe Delayed::Job do
 
       @job.lock_exclusively! 4.hours, 'worker2'
       @job.reload
-      @job.locked_by.should == 'worker2'
-      @job.locked_at.should > 1.minute.ago
+      expect(@job.locked_by).to eq 'worker2'
+      expect(@job.locked_at).to be > 1.minute.ago
     end
 
     it "should not be found by another worker" do
       Delayed::Job.worker_name = 'worker2'
 
-      Delayed::Job.find_available(1, 6.minutes).length.should == 0
+      expect(Delayed::Job.find_available(1, 6.minutes).length).to eq 0
     end
 
     it "should be found by another worker if the time has expired" do
       skip 'is it supported?'
       Delayed::Job.worker_name = 'worker2'
 
-      Delayed::Job.find_available(1, 4.minutes).length.should == 1
+      expect(Delayed::Job.find_available(1, 4.minutes).length).to eq 1
     end
 
     it "should be able to get exclusive access again when the worker name is the same" do
@@ -224,12 +224,12 @@ describe Delayed::Job do
 
   context "#name" do
     it "should be the class name of the job that was enqueued" do
-      Delayed::Job.create(:payload_object => ErrorJob.new ).name.should == 'ErrorJob'
+      expect(Delayed::Job.create(:payload_object => ErrorJob.new ).name).to eq 'ErrorJob'
     end
 
     it "should be the method that will be called if its a performable method object" do
       Delayed::Job.send_later(:clear_locks!)
-      Delayed::Job.last.name.should == 'Delayed::Job.clear_locks!'
+      expect(Delayed::Job.last.name).to eq 'Delayed::Job.clear_locks!'
 
     end
     it "should be the instance method that will be called if its a performable method object" do
@@ -237,7 +237,7 @@ describe Delayed::Job do
 
       story.send_later(:save)
 
-      Delayed::Job.last.name.should == 'Story#save'
+      expect(Delayed::Job.last.name).to eq 'Story#save'
     end
   end
 
@@ -251,26 +251,26 @@ describe Delayed::Job do
     it "should only work_off jobs that are >= min_priority" do
       Delayed::Job.min_priority = -5
       Delayed::Job.max_priority = 5
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
 
       Delayed::Job.enqueue SimpleJob.new, -10
       Delayed::Job.enqueue SimpleJob.new, 0
       Delayed::Job.work_off
 
-      SimpleJob.runs.should == 1
+      expect(SimpleJob.runs).to eq 1
     end
 
     it "should only work_off jobs that are <= max_priority" do
       Delayed::Job.min_priority = -5
       Delayed::Job.max_priority = 5
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
 
       Delayed::Job.enqueue SimpleJob.new, 10
       Delayed::Job.enqueue SimpleJob.new, 0
 
       Delayed::Job.work_off
 
-      SimpleJob.runs.should == 1
+      expect(SimpleJob.runs).to eq 1
     end
 
   end
@@ -284,11 +284,11 @@ describe Delayed::Job do
     end
 
     it "should leave the queue in a consistent state and not run the job if locking fails" do
-      SimpleJob.runs.should == 0
-      @job.stub(:lock_exclusively!).with(any_args).once.and_return(false)
-      Delayed::Job.should_receive(:find_available).once.and_return([@job])
+      expect(SimpleJob.runs).to eq 0
+      allow(@job).to receive(:lock_exclusively!).with(any_args).once.and_return(false)
+      expect(Delayed::Job).to receive(:find_available).once.and_return([@job])
       Delayed::Job.work_off(1)
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
     end
 
   end
@@ -304,16 +304,16 @@ describe Delayed::Job do
 
     it "should ingore locked jobs from other workers" do
       Delayed::Job.worker_name = 'worker3'
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
       Delayed::Job.work_off
-      SimpleJob.runs.should == 1 # runs the one open job
+      expect(SimpleJob.runs).to eq 1 # runs the one open job
     end
 
     it "should find our own jobs regardless of locks" do
       Delayed::Job.worker_name = 'worker1'
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
       Delayed::Job.work_off
-      SimpleJob.runs.should == 3 # runs open job plus worker1 jobs that were already locked
+      expect(SimpleJob.runs).to eq 3 # runs open job plus worker1 jobs that were already locked
     end
   end
 
@@ -329,17 +329,17 @@ describe Delayed::Job do
 
     it "should only find unlocked and expired jobs" do
       Delayed::Job.worker_name = 'worker3'
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
       Delayed::Job.work_off
       skip 'looks like it shoud run expired job only on same worker'
-      SimpleJob.runs.should == 2 # runs the one open job and one expired job
+      expect(SimpleJob.runs).to eq 2 # runs the one open job and one expired job
     end
 
     it "should ignore locks when finding our own jobs" do
       Delayed::Job.worker_name = 'worker1'
-      SimpleJob.runs.should == 0
+      expect(SimpleJob.runs).to eq 0
       Delayed::Job.work_off
-      SimpleJob.runs.should == 3 # runs open job plus worker1 jobs
+      expect(SimpleJob.runs).to eq 3 # runs open job plus worker1 jobs
       # This is useful in the case of a crash/restart on worker1, but make sure multiple workers on the same host have unique names!
     end
 

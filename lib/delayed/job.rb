@@ -104,7 +104,7 @@ module Delayed
 
     # Name to be used when payload is failed to be parsed.
     def safe_name
-      @name || 'unknown'
+      defined?(@name) && @name || 'unknown'
     end
 
     def payload_object=(object)
@@ -175,7 +175,7 @@ module Delayed
     end
 
     def self.cached_min_available_id
-      if @cached_min_available_id && @min_available_id_cache_time &&
+      if defined?(@cached_min_available_id) && @cached_min_available_id && @min_available_id_cache_time &&
          Time.now < @min_available_id_cache_time + CACHE_TIME_FOR_MIN_ID
         return @cached_min_available_id
       end
@@ -346,7 +346,20 @@ module Delayed
     # Note: This does not ping the DB to get the time, so all your clients
     # must have syncronized clocks.
     def self.db_time_now
-      (ActiveRecord::Base.default_timezone == :utc) ? Time.now.utc : Time.now
+      # modern rails
+      return Time.zone.now if Time.zone
+
+      default_timezone = if ::ActiveRecord.respond_to?(:default_timezone)
+                           ::ActiveRecord.default_timezone
+                         else
+                           ::ActiveRecord::Base.default_timezone
+                         end
+
+      if default_timezone == :utc
+        Time.now.utc
+      else
+        Time.now # rubocop:disable Rails/TimeZone
+      end
     end
   end
 
