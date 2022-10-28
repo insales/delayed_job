@@ -317,14 +317,14 @@ module Delayed
     end
 
     def deserialize(source)
-      handler = YAML.load(source) rescue nil
+      handler = (YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(source) : YAML.load(source)) rescue nil
 
       unless handler.respond_to?(:perform)
         if handler.nil? && source =~ ParseObjectFromYaml
           handler_class = $1
         end
         attempt_to_load(handler_class || handler.class)
-        handler = YAML.load(source)
+        handler = (YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(source) : YAML.load(source))
       end
 
       return handler if handler.respond_to?(:perform)
