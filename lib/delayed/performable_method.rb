@@ -12,7 +12,7 @@ module Delayed
     end
 
     def display_name
-      return "#{self.object.class}#{method}" unless self.object.is_a?(String)
+      return "#{self.object.class}##{method}" unless self.object.is_a?(String)
 
       case self.object
       when CLASS_STRING_FORMAT then "#{$1}.#{method}"
