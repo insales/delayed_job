@@ -15,7 +15,7 @@ begin
     port: 5432
   )
   ActiveRecord::Base.connection.try(:ping)
-rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
+rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad, ActiveRecord::NoDatabaseError
   puts "Cannot connect to postgres, trying in-memory sqlite3 instead"
   ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
 end

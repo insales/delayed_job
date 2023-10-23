@@ -2,14 +2,9 @@
 
 source "http://rubygems.org"
 
-gem "pg", "~> 1.1.4"
+gem "pg", "~> 1.1"
 gem "sqlite3"
 gem "rspec"
-gem "awesome_print"
-gem "pry"
-gem "pry-byebug"
-gem "pry-doc"
-gem "appraisal", require: false
-gem "activerecord", "~> 6.0.4.4"
+gem "activerecord", "~> 6.0.6"
 
 gemspec path: "../"
