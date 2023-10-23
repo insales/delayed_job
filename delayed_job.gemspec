@@ -10,10 +10,10 @@ Gem::Specification.new do |s|
   s.description = "Delated_job (or DJ) encapsulates the common pattern of asynchronously executing longer tasks in the background. It is a direct extraction from Shopify where the job table is responsible for a multitude of core tasks."
   s.authors  = ["Tobias Lütke"]
 
-  s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
+  s.files         = `git ls-files -z`.split("\x0").reject { |file| file.start_with?('.') || file.match(%r{^spec/}) }
   s.require_paths = ['lib']
 
-  s.add_dependency 'activerecord', '>= 3.2', '< 7.1'
+  s.add_dependency 'activerecord', '>= 3.2', '< 7.2'
   s.add_dependency 'railties'
 
   s.add_development_dependency 'bundler'

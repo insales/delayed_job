@@ -1,5 +1,9 @@
 require 'rubygems'
-require 'pry'
+begin
+  require 'pry'
+rescue LoadError
+  # no pry in CI
+end
 require 'active_record'
 require 'pg'
 
