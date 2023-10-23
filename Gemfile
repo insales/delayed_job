@@ -4,13 +4,15 @@ source 'http://rubygems.org'
 
 gemspec
 
-gem 'pg', '~> 1.1.4'
+gem 'pg', '~> 1.1'
 gem 'sqlite3'
 gem 'rspec'
 
-gem 'awesome_print'
-gem 'pry'
-gem 'pry-byebug'
-gem 'pry-doc'
+unless defined?(Appraisal)
+  gem 'appraisal', require: false
 
-gem 'appraisal', require: false
+  gem 'awesome_print'
+  gem 'pry'
+  gem 'pry-byebug'
+  gem 'pry-doc'
+end
