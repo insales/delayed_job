@@ -1,4 +1,5 @@
 require 'active_record'
+require 'benchmark'
 require 'socket'
 
 module Delayed

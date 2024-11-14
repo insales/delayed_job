@@ -3,6 +3,7 @@ PATH
   specs:
     delayed_job (1.7.0)
       activerecord (>= 7, < 8.1)
+      benchmark
       railties
 
 GEM
