@@ -6,8 +6,11 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: [3.3.4]
-        rails-version: [71, 72]
+        ruby-version: [3.3.6]
+        rails-version:
+          - 71
+          - 72
+          - 80
         include:
           - ruby-version: 3.2.4
             rails-version: 70
