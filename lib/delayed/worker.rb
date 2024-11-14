@@ -1,3 +1,5 @@
+require 'benchmark'
+
 module Delayed
   class Worker
     SLEEP = 5
