@@ -112,4 +112,21 @@ describe 'random ruby objects' do
     expect(job.payload_object.perform).to eq 'Once upon...'
   end
 
+  it "should call send later on methods sharded models which are wrapped with handle_asynchronously" do
+    story = ShardedStory.create account_id: 123, text: 'Once upon...'
+
+    expect(Delayed::Job.count).to eq 0
+    expect(ShardedRecord).to receive(:connected_to_shard).and_call_original
+
+    story.whatever(1, 5)
+
+    expect(Delayed::Job.count).to eq 1
+    job = Delayed::Job.first
+    expect(job.payload_object.class).to eq Delayed::ShardedPerformableMethod
+    expect(job.payload_object.method).to eq :whatever_without_send_later
+    expect(job.payload_object.args).to eq([1, 5])
+    expect(job.payload_object.account_id).to eq(story.account_id)
+    expect(job.payload_object.perform).to eq 'Once upon...'
+  end
+
 end

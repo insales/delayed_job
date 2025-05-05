@@ -1,7 +1,12 @@
 module Delayed
   module MessageSending
     def send_later(method, prio=0, *args)
-      Delayed::Job.enqueue Delayed::PerformableMethod.new(self, method.to_sym, args), prio
+      performable_method = if self.is_a?(ShardedRecord) && self.respond_to?(:account_id)
+                             Delayed::ShardedPerformableMethod.new(account_id, self, method.to_sym, args)
+                           else
+                             Delayed::PerformableMethod.new(self, method.to_sym, args)
+                           end
+      Delayed::Job.enqueue performable_method, prio
     end
 
     module ClassMethods

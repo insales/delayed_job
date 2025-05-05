@@ -3,6 +3,7 @@ require 'rails'
 
 require 'delayed/message_sending'
 require 'delayed/performable_method'
+require 'delayed/sharded_performable_method'
 require 'delayed/job'
 require 'delayed/worker'
 

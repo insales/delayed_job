@@ -38,6 +38,15 @@ ActiveRecord::Schema.define do
   create_table :stories, :force => true do |table|
     table.string :text
   end
+
+  create_table :accounts, :force => true do |table|
+    table.timestamps null: false
+  end
+
+  create_table :sharded_stories, :force => true do |table|
+    table.integer :account_id
+    table.string :text
+  end
 end
 
 # Purely useful for test cases...
@@ -46,4 +55,25 @@ class Story < ActiveRecord::Base
   def whatever(n, _); tell*n; end
 
   handle_asynchronously :whatever
+end
+
+class ShardedRecord < ActiveRecord::Base
+  self.abstract_class = true
+
+  def self.connected_to_shard(shard)
+    yield
+  end
+end
+
+class ShardedStory < ShardedRecord
+  def tell; text; end
+  def whatever(n, _); tell*n; end
+
+  handle_asynchronously :whatever
+end
+
+class Account < ActiveRecord::Base
+  def self.fetch_shard_by_id(id)
+    :shard2
+  end
 end
