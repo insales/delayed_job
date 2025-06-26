@@ -97,7 +97,7 @@ describe Delayed::Job do
     job = Delayed::Job.first
 
     expect(job.last_error).to match(/did not work/)
-    expect(job.last_error).to match(/job_spec.rb:10:in `perform'/)
+    expect(job.last_error).to match(/job_spec.rb:10:in .(ErrorJob#)?perform'/)
     expect(job.attempts).to eq 1
 
     expect(job.run_at).to be > Delayed::Job.db_time_now - 10.minutes

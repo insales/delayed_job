@@ -5,19 +5,16 @@ require 'logger'
 class TestApplication < Rails::Application; end
 
 ActiveRecord::Base.logger = Logger.new('/tmp/dj.log')
+ENV["DATABASE_URL"] ||= "postgresql://postgres@127.0.0.1:5432/delayed_job_test?encoding=utf8"
 begin
-  ActiveRecord::Base.establish_connection(
-    adapter: 'postgresql',
-    host: '127.0.0.1',
-    database: 'delayed_job_test',
-    encoding: 'utf8',
-    username: 'postgres',
-    port: 5432
-  )
   ActiveRecord::Base.connection.try(:ping)
 rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad, ActiveRecord::NoDatabaseError
   puts "Cannot connect to postgres, trying in-memory sqlite3 instead"
-  ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+  ENV["DATABASE_URL"] = "sqlite3::memory:"
+  ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
+  ActiveRecord::Base.establish_connection(
+    ActiveRecord::DatabaseConfigurations::UrlConfig.new(Rails.env, :primary, ENV["DATABASE_URL"], {})
+  )
 end
 
 ActiveRecord::Migration.verbose = false
