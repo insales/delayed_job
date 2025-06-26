@@ -3,7 +3,7 @@
 source "http://rubygems.org"
 
 gem "pg", "~> 1.1"
-gem "sqlite3"
+gem "sqlite3", ">=2.1"
 gem "rspec"
 gem "activerecord", "~>8.0.0"
 
