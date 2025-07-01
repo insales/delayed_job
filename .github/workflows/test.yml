@@ -6,21 +6,25 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: [3.3.6]
+        ruby-version: [3.4.4]
         rails-version:
-          - 71
           - 72
           - 80
         include:
-          - ruby-version: 3.2.4
+          - ruby-version: 3.3.8
             rails-version: 70
+          - ruby-version: 3.2.4
+            rails-version: 71
+          # TODO: once dependencies support it:
+          # - ruby-version: 3.5.0-preview1
+          #   rails-version: 80
 
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails-version }}.gemfile
 
     services:
       postgres:
-        image: postgres:12-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ""
