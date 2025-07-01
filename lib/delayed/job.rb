@@ -6,9 +6,11 @@ module Delayed
   class DeserializationError < StandardError
   end
 
+  JobSuperclass = ActiveRecord::Base unless defined?(JobSuperclass)
+
   # A job object that is persisted to the database.
   # Contains the work object as a YAML field.
-  class Job < ActiveRecord::Base
+  class Job < JobSuperclass
     MAX_ATTEMPTS = 3
     MAX_RUN_TIME = 2.hours
     CACHE_TIME_FOR_MIN_ID = 10.minutes
