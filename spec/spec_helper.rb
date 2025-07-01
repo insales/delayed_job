@@ -4,6 +4,7 @@ begin
 rescue LoadError
   # no pry in CI
 end
+require 'logger' # to fix rails 7.0, newer do not need
 require 'active_record'
 require 'pg'
 

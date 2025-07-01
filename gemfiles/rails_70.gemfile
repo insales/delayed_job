@@ -3,8 +3,9 @@
 source "http://rubygems.org"
 
 gem "pg", "~> 1.1"
-gem "sqlite3"
+gem "sqlite3", "~>1.4"
 gem "rspec"
+gem "logger"
 gem "activerecord", "~>7.0.8"
 
 gemspec path: "../"
