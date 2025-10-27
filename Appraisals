@@ -20,3 +20,8 @@ appraise 'rails_80' do
   gem 'activerecord', '~>8.0.0'
   gem 'sqlite3', '>=2.1'
 end
+
+appraise 'rails_81' do
+  gem 'activerecord', '~>8.1.0'
+  gem 'sqlite3', '>=2.1'
+end

@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -z`.split("\x0").reject { |file| file.start_with?('.') || file.match(%r{^spec/}) }
   s.require_paths = ['lib']
 
-  s.add_dependency 'activerecord', '>= 7', '< 8.1'
+  s.add_dependency 'activerecord', '>= 7', '< 8.2'
   s.add_dependency 'railties'
   s.add_dependency 'benchmark'
 
