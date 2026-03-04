@@ -151,10 +151,9 @@ module Delayed
       unless object.respond_to?(:perform) || block_given?
         raise ArgumentError, 'Cannot enqueue items which do not respond to perform'
       end
-    
+
       priority = args.first || 0
       run_at   = args[1] || db_time_now
-
       Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
     end
 

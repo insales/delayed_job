@@ -10,14 +10,14 @@ module Delayed
 
       raise NoMethodError, "undefined method `#{method}' for #{object.inspect}" unless object.respond_to?(method, true)
     end
-    
-    def display_name  
+
+    def display_name
       case self.object
       when CLASS_STRING_FORMAT then "#{$1}.#{method}"
       when AR_STRING_FORMAT    then "#{$1}##{method}"
       else "Unknown##{method}"
-      end      
-    end    
+      end
+    end
 
     def perform
       obj = load(object)
