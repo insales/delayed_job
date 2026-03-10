@@ -47,7 +47,8 @@ module Delayed
     end
 
     # When a worker is exiting, make sure we don't have any locked jobs.
-    def self.clear_locks!
+    def self.clear_locks!(_worker_name = nil)
+      # TODO: унести worker_name в worker и передавать
       where(locked_by: worker_name).update_all(locked_by: nil, locked_at: nil)
     end
 
@@ -153,6 +154,7 @@ module Delayed
       logger.info "* [JOB] #{name} completed after %.4f" % runtime
       return true  # did work
     rescue Exception => e
+      # TODO: self.class.lifecycle.run_callbacks(:error, self, job){ handle_failed_job(job, error) }
       begin
         # Log before reschedule to report more params
         log_exception(e)
@@ -172,9 +174,14 @@ module Delayed
 
       priority = args.first || 0
       run_at   = args[1] || db_time_now
-      job = Job.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
-      logger.info "* [JOB] create job_id: #{job.id} class: #{job.handler}"
-      job
+
+      Job.new(:payload_object => object, :priority => priority.to_i, :run_at => run_at).tap do |job|
+        Delayed::Worker.lifecycle.run_callbacks(:enqueue, job) do
+          job.hook(:enqueue)
+          job.save!
+        end
+        logger.info "* [JOB] create job_id: #{job.id} class: #{job.handler}"
+      end
     end
 
     def self.cached_min_available_id
@@ -297,19 +304,20 @@ module Delayed
     # Moved into its own method so that new_relic can trace it.
     # add hook https://github.com/collectiveidea/delayed_job/blob/v4.0.6/lib/delayed/backend/base.rb#L90
     def invoke_job
-      begin
-        hook :before
-        payload_object.perform
-        hook :success
-      rescue Exception => e # rubocop:disable RescueException
-        hook :error, e
-        raise e
-      ensure
-        hook :after
+      Delayed::Worker.lifecycle.run_callbacks(:invoke_job, self) do
+        begin
+          hook :before
+          payload_object.perform
+          hook :success
+        rescue Exception => e # rubocop:disable RescueException
+          hook :error, e
+          raise e
+        ensure
+          hook :after
+        end
       end
     end
 
-  private
     # add hook https://github.com/collectiveidea/delayed_job/blob/v4.0.6/lib/delayed/backend/base.rb#L111
     def hook(name, *args)
       if payload_object.respond_to?(name)
@@ -318,6 +326,8 @@ module Delayed
       end
       rescue DeserializationError # rubocop:disable HandleExceptions
     end
+
+  private
 
     def deserialize(source)
       handler = (YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(source) : YAML.load(source)) rescue nil
